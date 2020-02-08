@@ -1,0 +1,104 @@
+; Sample of push-to-db.ini file 
+; Should be stored in /etc/pythonic/ 
+[app]
+param=none
+
+[mqtt.broker]
+mqtt_broker=pythonic.local
+mqtt_port=1883
+mqtt_keepalive=45
+username=pusr103
+password=21052017
+
+[lazywriter]
+; if the MessageQueue is filled with an entry for more x seconds
+; then activate the LazyWriter to write the data. 
+MaxQueueLatency=120
+; if the MessageQueue reach the x entries 
+; then activate the LazyWriter to write the data.
+MaxQueueSize=10
+; seconds to wait after processing the message queue (or skip 
+; message queue processing)
+PauseAfterProcess=2
+
+[connector.sqlitedb]
+class=SqliteConnector
+db=/var/local/sqlite/pythonic.db
+
+[mqtt.capture.0]
+subscribe=maison/rez/#,maison/exterieur/#,maison/cave/#
+class=MqttTopicCapture
+storage=sqlitedb.topicmsg
+
+[mqtt.capture.1]
+subscribe=maison/exterieur/cabane/lux,maison/exterieur/jardin/hrel,maison/exterieur/jardin/temp
+class=MqttTimeserieCapture
+storage=sqlitedb.ts_cab
+
+[mqtt.capture.2]
+subscribe=maison/rez/salon/temp,maison/rez/salon/pir
+class=MqttTimeserieCapture
+storage=sqlitedb.ts_salon
+
+[mqtt.capture.3]
+subscribe=maison/cave/chaufferie/etat,maison/cave/chaufferie/temp-eau
+class=MqttTimeserieCapture
+storage=sqlitedb.ts_chauf
+
+[mqtt.capture.4]
+subscribe=connect/#
+class=MqttTopicCapture
+storage=sqlitedb.topicmsg
+
+[mqtt.capture.5]
+subscribe=connect/#
+class=MqttTimeserieCapture
+storage=sqlitedb.ts_connect
+
+[loggers]
+; root - logger de l'application
+; connector - logger des connecteurs DB
+; pmq - process_message_queue() du LazyWriter
+;       Affiche une info très utile sur les messages 
+;       à sauver, par quelle classe et sur quel connecteur
+keys=root,connector,pmq
+
+[handlers]
+keys=console,logfile
+
+[formatters]
+keys=default
+
+[logger_root]
+; DEBUG, INFO, WARNING, ERROR, CRITICAL ou NOTSET
+; utiliser level=NOTSET pour tous les messages
+; utiliser level=INFO pour suivre les msq MQTT entrant et traitement par LazyWriter
+level=NOTSET
+handlers=console,logfile
+
+[logger_connector]
+level=ERROR
+handlers=console,logfile
+qualname=connector
+
+[logger_pmq]
+level=ERROR
+handlers=console,logfile
+qualname=pmq
+
+[handler_console]
+class=StreamHandler
+level=NOTSET
+formatter=default
+args=(sys.stdout,)
+
+[handler_logfile]
+class=FileHandler
+level=NOTSET
+formatter=default
+args=('/var/log/pythonic/push-to-db.log', 'w')
+
+[formatter_default]
+format=%(asctime)s %(levelname)s %(message)s
+datefmt=
+
